@@ -1,3 +1,79 @@
 from django.shortcuts import render
+from .serializers import BookSerializer
+from .models import Book
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from rest_framework import status
+from django.db import models
+
 
 # Create your views here.
+
+
+
+
+@api_view(['GET'])
+def search_book_by_topic(request, topic):
+    try:
+        selected_books = Book.objects.filter(topic=topic)
+
+        if not selected_books.exists():
+            return Response({
+                "Message":"There is no book available with the specified topic",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = BookSerializer(selected_books, many=True)
+        return Response(serializer.data)
+
+
+    except  :
+        return Response({
+            "error": "An Error occured please try again later",
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)     
+
+
+@api_view(['GET'])
+def book_details(request, pk):
+    try :
+        selected_book = Book.objects.get(pk=pk)
+        
+        serializer = BookSerializer(selected_book, many=False)
+        return Response(serializer.data)
+
+    except Book.DoesNotExist:
+        return Response({
+            "error": "There is no book available with the specified id",
+        }, status=status.HTTP_404_NOT_FOUND) 
+
+    except :
+        return Response({
+            "error": "An Error occured please try again later",
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+
+
+@api_view(['PUT'])
+def update_book(request, pk):
+    try:
+        book = Book.objects.get(pk=pk)
+        serializer = BookSerializer(instance=book, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "Message":"Book updated successfully",
+            })
+
+        return Response({
+            "Message":"Please enter a valid value",
+        })    
+
+    except Book.DoesNotExist :
+        return Response({
+            "error": "There is no book available with the specified id",
+        }, status=status.HTTP_404_NOT_FOUND)
+
+    except :
+        return Response({
+                "error": "An Error occured please try again later",
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
