@@ -10,70 +10,112 @@ from django.db import models
 # Create your views here.
 
 
-
-
 @api_view(['GET'])
 def search_book_by_topic(request, topic):
+
+    '''
+    search_book_by_topic Function:
+        search for books with a specific topic
+
+        Parameter:
+            topic : book topic
+
+
+        Return:
+            returns array of books with the specified topic    
+    '''
+
     try:
         selected_books = Book.objects.filter(topic=topic)
 
         if not selected_books.exists():
             return Response({
-                "Message":"There is no book available with the specified topic",
+                "Message": "There is no book available with the specified topic",
             }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = BookSerializer(selected_books, many=True)
-        return Response(serializer.data)
+        ino = []
+        for i in range(len(serializer.data)):
+            ino.append({
+                "id": serializer.data[i]['id'],
+                "title": serializer.data[i]['title']
+            })
+        return Response(ino)
 
-
-    except  :
+    except:
         return Response({
             "error": "An Error occured please try again later",
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)     
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
 def book_details(request, pk):
-    try :
+
+    '''
+    book_details Function:
+        view specific book details
+
+        Parameter:
+            pk : book id
+
+        Return:
+            returns book details for the given id    
+    
+    '''
+
+    try:
         selected_book = Book.objects.get(pk=pk)
-        
+
         serializer = BookSerializer(selected_book, many=False)
-        return Response(serializer.data)
+        return Response({
+            "title": serializer.data['title'],
+            "quantity":serializer.data['number_of_items'],
+            "price":serializer.data['cost']
+        })
 
     except Book.DoesNotExist:
         return Response({
             "error": "There is no book available with the specified id",
-        }, status=status.HTTP_404_NOT_FOUND) 
+        }, status=status.HTTP_404_NOT_FOUND)
 
-    except :
+    except:
         return Response({
             "error": "An Error occured please try again later",
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
-
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['PUT'])
-def update_book(request, pk):
+def decrement_number_of_items(request, pk):
+    '''
+    decrement_number_of_items Function
+        decrement number of items available for
+        this book 
+
+        Parameter:
+            pk : book id
+
+        Return :
+            returns a successfull message if the book is updated successfully
+
+    '''
+
     try:
         book = Book.objects.get(pk=pk)
-        serializer = BookSerializer(instance=book, data=request.data)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                "Message":"Book updated successfully",
-            })
+        book.number_of_items -= 1
+
+        book.save()
 
         return Response({
-            "Message":"Please enter a valid value",
-        })    
+            "Message": "Book updated successfully",
+        })
 
-    except Book.DoesNotExist :
+    except Book.DoesNotExist:
         return Response({
             "error": "There is no book available with the specified id",
         }, status=status.HTTP_404_NOT_FOUND)
 
-    except :
+    except:
         return Response({
-                "error": "An Error occured please try again later",
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+            "error": "An Error occured please try again later",
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
