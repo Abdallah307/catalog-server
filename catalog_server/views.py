@@ -67,11 +67,7 @@ def book_details(request, pk):
         selected_book = Book.objects.get(pk=pk)
 
         serializer = BookSerializer(selected_book, many=False)
-        return Response({
-            "title": serializer.data['title'],
-            "quantity":serializer.data['number_of_items'],
-            "price":serializer.data['cost']
-        })
+        return Response(serializer.data)
 
     except Book.DoesNotExist:
         return Response({
